@@ -1,0 +1,9 @@
+package com.winmart.dto.category;
+
+import java.util.UUID;
+
+public record CategoryChildDto(
+        UUID id,
+        String name,
+        String slug
+) {}
