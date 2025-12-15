@@ -1,5 +1,6 @@
 package com.winmart.controller;
 
+import com.winmart.dto.category.CategoryChildDto;
 import com.winmart.dto.category.CategoryTreeDto;
 import com.winmart.dto.product.ProductSummaryDto;
 import com.winmart.service.CategoryService;
@@ -26,9 +27,14 @@ public class CategoryController {
         return categoryService.getCategoryTree();
     }
 
-    @GetMapping("/{parentSlug}")
+    @GetMapping("/{parentSlug}/products")
     public List<ProductSummaryDto> getProductsByParentSlug(@PathVariable String parentSlug) {
         return productService.getProductsByParentSlug(parentSlug);
+    }
+
+    @GetMapping("/{parentSlug}")
+    public List<CategoryChildDto> getCategoryChild(@PathVariable String parentSlug) {
+        return categoryService.getCategoryChild(parentSlug);
     }
 
     @GetMapping("/{parentSlug}/{childSlug}")

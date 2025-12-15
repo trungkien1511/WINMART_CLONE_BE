@@ -82,4 +82,8 @@ public class CategoryService {
 
         return result;
     }
+
+    public List<CategoryChildDto> getCategoryChild(String parentSlug) {
+        return categoryRepository.getCategoryChild(parentSlug);
+    }
 }
