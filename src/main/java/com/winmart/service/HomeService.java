@@ -76,7 +76,6 @@ public class HomeService {
             var pricing = pricingService.getPricing(pp);
 
             ProductSummaryDto dto = new ProductSummaryDto(
-                    row.categoryId(),
                     pp.getId(),
                     pp.getProduct().getName(),
                     pp.getProduct().getSlug(),
