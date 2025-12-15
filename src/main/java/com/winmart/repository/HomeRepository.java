@@ -22,7 +22,7 @@ public interface HomeRepository extends JpaRepository<ProductCategory, UUID> {
             JOIN pc.category child
             LEFT JOIN child.parent parent
             JOIN pc.product p
-            JOIN p.productPackagings pp
+            JOIN p.productPackaging pp
             JOIN pp.packagingType pt
             WHERE child.isActive = true
               AND p.isActive = true
