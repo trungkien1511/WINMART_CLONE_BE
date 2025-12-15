@@ -7,6 +7,8 @@ import com.winmart.entity.Category;
 import com.winmart.entity.Product;
 import com.winmart.entity.ProductCategory;
 import com.winmart.entity.ProductPackaging;
+import com.winmart.exception.NotFoundException;
+import com.winmart.repository.CategoryRepository;
 import com.winmart.repository.ProductRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +23,13 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final PricingService pricingService;
 
     public ProductService(ProductRepository productRepository,
-                          PricingService pricingService) {
+                          PricingService pricingService, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
         this.pricingService = pricingService;
     }
 
@@ -33,7 +37,7 @@ public class ProductService {
         Product product = productRepository.findBySlug(slug);
 
 
-        List<ProductPackagingDto> packagingDtos = product.getProductPackagings()
+        List<ProductPackagingDto> packagingDtos = product.getProductPackaging()
                 .stream()
                 .map(pp -> {
                     var pricing = pricingService.getPricing(pp);
@@ -65,7 +69,7 @@ public class ProductService {
         ProductCategory pc = pcs.stream()
                 .filter(c -> Boolean.TRUE.equals(c.getIsPrimary()))
                 .findFirst()
-                .orElse(pcs.get(0));   // fallback: lấy cái đầu tiên nếu không có primary
+                .orElse(pcs.getFirst());   // fallback: lấy cái đầu tiên nếu không có primary
 
         Category child = pc.getCategory();
         UUID childCategoryId = child.getId();
@@ -73,7 +77,7 @@ public class ProductService {
         // 3. Lấy tối đa 5 packaging sản phẩm tương tự cùng cat con
         Pageable limit5 = PageRequest.of(0, 5);
         List<ProductPackaging> relatedPps =
-                productRepository.findRelatedPackagingsByChildCategory(childCategoryId,
+                productRepository.findRelatedPackagingByChildCategory(childCategoryId,
                         product.getId(),
                         limit5);
 
@@ -84,7 +88,6 @@ public class ProductService {
                     var pricing = pricingService.getPricing(pp);
 
                     return new ProductSummaryDto(
-                            childCategoryId,                 // categoryId = cat con
                             pp.getId(),
                             p.getName(),
                             p.getSlug(),
@@ -104,5 +107,35 @@ public class ProductService {
                 relatedProducts
         );
 
+    }
+
+    public List<ProductSummaryDto> getProductsByParentSlug(String parentSlug) {
+        var pp = productRepository.findPackagingByParentOrChildrenSlug(parentSlug);
+        return mapToSummary(pp);
+    }
+
+    public List<ProductSummaryDto> getProductsByChildSlug(String parentSlug, String childSlug) {
+        // validate child thuộc parent
+        boolean ok = categoryRepository.existsBySlugAndParentSlug(childSlug, parentSlug);
+        if (!ok) {
+            throw new NotFoundException("Child category not found in parent category");
+        }
+
+        var pp = productRepository.findPackagingByCategorySlug(childSlug);
+        return mapToSummary(pp);
+    }
+
+    private List<ProductSummaryDto> mapToSummary(List<ProductPackaging> pp) {
+        return pp.stream().map(p -> {
+            var pricing = pricingService.getPricing(p);
+            return new ProductSummaryDto(
+                    p.getId(),
+                    p.getProduct().getName(),
+                    p.getProduct().getSlug(),
+                    pricing.finalPrice(),
+                    pricing.displayOriginalPrice(),
+                    p.getPackagingType().getName()
+            );
+        }).toList();
     }
 }

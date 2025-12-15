@@ -24,7 +24,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString(exclude = {"brand", "productPackagings", "productCategories"})
+@ToString(exclude = {"brand", "productPackaging", "productCategories"})
 public class Product {
 
     @Id
@@ -66,7 +66,7 @@ public class Product {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductPackaging> productPackagings = new ArrayList<>();
+    private List<ProductPackaging> productPackaging = new ArrayList<>();
 
     @Column(name = "sku")
     private String sku;
@@ -86,12 +86,12 @@ public class Product {
 
     // Helper methods
     public void addProductPackaging(ProductPackaging productPackaging) {
-        productPackagings.add(productPackaging);
+        this.productPackaging.add(productPackaging);
         productPackaging.setProduct(this);
     }
 
     public void removeProductPackaging(ProductPackaging productPackaging) {
-        productPackagings.remove(productPackaging);
+        this.productPackaging.remove(productPackaging);
         productPackaging.setProduct(null);
     }
 

@@ -2,6 +2,8 @@ package com.winmart.repository;
 
 import com.winmart.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,4 +19,16 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     List<Category> findByParentIsNotNullAndIsActiveTrue();
 
     List<Category> findByIsActiveTrue();
+
+    @Query("""
+                select (count(c) > 0)
+                from Category c
+                join c.parent p
+                where c.slug = :childSlug
+                  and p.slug = :parentSlug
+                  and c.isActive = true
+                  and p.isActive = true
+            """)
+    boolean existsBySlugAndParentSlug(@Param("childSlug") String childSlug,
+                                      @Param("parentSlug") String parentSlug);
 }
