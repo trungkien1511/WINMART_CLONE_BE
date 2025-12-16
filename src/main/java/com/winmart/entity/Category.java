@@ -63,6 +63,9 @@ public class Category {
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductCategory> productCategories = new ArrayList<>();
 
+    @ManyToMany(mappedBy = "categories")
+    private List<Brand> brands;
+
     // Builder pattern constructor
     @Builder
     public Category(String code, String name, String slug, String description,

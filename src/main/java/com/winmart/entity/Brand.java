@@ -1,13 +1,17 @@
 package com.winmart.entity;
 
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "brands",
@@ -16,6 +20,10 @@ import org.hibernate.annotations.UpdateTimestamp;
                 @UniqueConstraint(name = "uq_brands_slug", columnNames = "slug")
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+
 public class Brand {
 
     @Id
@@ -51,11 +59,15 @@ public class Brand {
     @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL)
     private List<Product> products = new ArrayList<>();
 
-    // Constructors
-    public Brand() {
-    }
+    @ManyToMany
+    @JoinTable(
+            name = "brand_categories",
+            joinColumns = @JoinColumn(name = "brand_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private List<Category> categories;
 
-    // Constructor đầy đủ
+    @Builder
     public Brand(String code, String name, String slug, String description, String logoUrl) {
         this.code = code;
         this.name = name;
@@ -64,117 +76,6 @@ public class Brand {
         this.logoUrl = logoUrl;
     }
 
-    // Constructor cơ bản (chỉ required fields)
-    public Brand(String code, String name, String slug) {
-        this.code = code;
-        this.name = name;
-        this.slug = slug;
-    }
-
-    // Constructor không có logo
-    public Brand(String code, String name, String slug, String description) {
-        this.code = code;
-        this.name = name;
-        this.slug = slug;
-        this.description = description;
-    }
-
-    // Getters
-    public UUID getId() {
-        return id;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getLogoUrl() {
-        return logoUrl;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public Boolean getIs_active() {
-        return is_active;
-    }
-
-    // Setters
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setLogoUrl(String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
-
-    public void setIs_active(Boolean is_active) {
-        this.is_active = is_active;
-    }
-
-    @Override
-    public String toString() {
-        return "Brand{" +
-                "id=" + id +
-                ", code='" + code + '\'' +
-                ", name='" + name + '\'' +
-                ", slug='" + slug + '\'' +
-                ", description='" + description + '\'' +
-                ", logoUrl='" + logoUrl + '\'' +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", products=" + products +
-                '}';
-    }
 
     // equals và hashCode
     @Override

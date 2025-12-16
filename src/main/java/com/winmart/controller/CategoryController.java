@@ -11,7 +11,7 @@ import java.util.List;
 
 @CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/category")
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -27,17 +27,17 @@ public class CategoryController {
         return categoryService.getCategoryTree();
     }
 
-    @GetMapping("/{parentSlug}/products")
-    public List<ProductSummaryDto> getProductsByParentSlug(@PathVariable String parentSlug) {
-        return productService.getProductsByParentSlug(parentSlug);
-    }
-
     @GetMapping("/{parentSlug}")
     public List<CategoryChildDto> getCategoryChild(@PathVariable String parentSlug) {
         return categoryService.getCategoryChild(parentSlug);
     }
 
-    @GetMapping("/{parentSlug}/{childSlug}")
+    @GetMapping("/{parentSlug}/products")
+    public List<ProductSummaryDto> getProductsByParentSlug(@PathVariable String parentSlug) {
+        return productService.getProductsByParentSlug(parentSlug);
+    }
+
+    @GetMapping("/{parentSlug}/{childSlug}/products")
     public List<ProductSummaryDto> getProductSByChild(
             @PathVariable String parentSlug,
             @PathVariable String childSlug
