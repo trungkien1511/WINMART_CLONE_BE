@@ -7,48 +7,59 @@ import com.winmart.entity.Category;
 import com.winmart.entity.Product;
 import com.winmart.entity.ProductCategory;
 import com.winmart.entity.ProductPackaging;
-import com.winmart.exception.NotFoundException;
-import com.winmart.repository.CategoryRepository;
+import com.winmart.repository.ProductPackagingRepository;
+import com.winmart.repository.ProductPackagingSpecs;
 import com.winmart.repository.ProductRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 @Service
-@Transactional(readOnly = true)
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final PricingService pricingService;
+    private final ProductPackagingRepository productPackagingRepository;
+
 
     public ProductService(ProductRepository productRepository,
-                          PricingService pricingService, CategoryRepository categoryRepository) {
+                          ProductPackagingRepository productPackagingRepository) {
         this.productRepository = productRepository;
-        this.categoryRepository = categoryRepository;
-        this.pricingService = pricingService;
+        this.productPackagingRepository = productPackagingRepository;
+
+    }
+
+    private List<ProductSummaryDto> mapToSummary(List<ProductPackaging> pp) {
+        return pp.stream().map(p -> {
+            return new ProductSummaryDto(
+                    p.getId(),
+                    p.getProduct().getName(),
+                    p.getProduct().getSlug(),
+                    p.getFinalPrice(),
+                    p.getOriginalPrice(),
+                    p.getPackagingType().getName()
+            );
+        }).toList();
     }
 
     public ProductDetailDto getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug);
 
-
         List<ProductPackagingDto> packagingDtos = product.getProductPackaging()
                 .stream()
                 .map(pp -> {
-                    var pricing = pricingService.getPricing(pp);
                     return new ProductPackagingDto(
                             pp.getPackagingType().getId(),          // hoặc .toString()
                             pp.getPackagingType().getName(),
-                            pricing.finalPrice(),
-                            pricing.displayOriginalPrice(),
+                            pp.getFinalPrice(),
+                            pp.getOriginalPrice(),
                             pp.getStockQuantity(),
                             pp.isInStock(),
-                            pricing.isOnSale()
+                            pp.isOnSale()
                     );
                 })
                 .toList();
@@ -77,26 +88,12 @@ public class ProductService {
         // 3. Lấy tối đa 5 packaging sản phẩm tương tự cùng cat con
         Pageable limit5 = PageRequest.of(0, 5);
         List<ProductPackaging> relatedPps =
-                productRepository.findRelatedPackagingByChildCategory(childCategoryId,
+                productPackagingRepository.findRelatedPackagingByChildCategory(childCategoryId,
                         product.getId(),
                         limit5);
 
         // 4. Map sang ProductSummaryDto
-        List<ProductSummaryDto> relatedProducts = relatedPps.stream()
-                .map(pp -> {
-                    Product p = pp.getProduct();
-                    var pricing = pricingService.getPricing(pp);
-
-                    return new ProductSummaryDto(
-                            pp.getId(),
-                            p.getName(),
-                            p.getSlug(),
-                            pricing.finalPrice(),
-                            pricing.displayOriginalPrice(),
-                            pp.getPackagingType().getName()
-                    );
-                })
-                .toList();
+        List<ProductSummaryDto> relatedProducts = mapToSummary(relatedPps);
 
         // 5. Trả về Detail + related
         return new ProductDetailDto(
@@ -109,33 +106,41 @@ public class ProductService {
 
     }
 
-    public List<ProductSummaryDto> getProductsByParentSlug(String parentSlug) {
-        var pp = productRepository.findPackagingByParentOrChildrenSlug(parentSlug);
-        return mapToSummary(pp);
-    }
-
-    public List<ProductSummaryDto> getProductsByChildSlug(String parentSlug, String childSlug) {
-        // validate child thuộc parent
-        boolean ok = categoryRepository.existsBySlugAndParentSlug(childSlug, parentSlug);
-        if (!ok) {
-            throw new NotFoundException("Child category not found in parent category");
+    private List<String> parseBrandSlugs(String brands) {
+        if (brands == null || brands.isBlank()) {
+            return List.of();
         }
 
-        var pp = productRepository.findPackagingByCategorySlug(childSlug);
+        return Arrays.stream(brands.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
+    }
+
+    private Sort parseSort(String order) {
+        if (order == null || order.isBlank()) return Sort.unsorted();
+
+        return switch (order) {
+            case "price_asc" -> Sort.by("finalPrice").ascending();
+            case "price_desc" -> Sort.by("finalPrice").descending();
+            default -> Sort.unsorted();
+        };
+    }
+
+    public List<ProductSummaryDto> getProductsByCategory(String slug, String order, String brands) {
+        List<String> brandSlugs = parseBrandSlugs(brands);
+
+        Sort sort = parseSort(order);
+
+        var spec = ProductPackagingSpecs.distinct()
+                .and(ProductPackagingSpecs.productActive())
+                .and(ProductPackagingSpecs.categoryOrParentSlug(slug))
+                .and(ProductPackagingSpecs.brandSlugIn(brandSlugs));
+
+        var pp = productPackagingRepository.findAll(spec, sort);
         return mapToSummary(pp);
     }
 
-    private List<ProductSummaryDto> mapToSummary(List<ProductPackaging> pp) {
-        return pp.stream().map(p -> {
-            var pricing = pricingService.getPricing(p);
-            return new ProductSummaryDto(
-                    p.getId(),
-                    p.getProduct().getName(),
-                    p.getProduct().getSlug(),
-                    pricing.finalPrice(),
-                    pricing.displayOriginalPrice(),
-                    p.getPackagingType().getName()
-            );
-        }).toList();
-    }
+
 }

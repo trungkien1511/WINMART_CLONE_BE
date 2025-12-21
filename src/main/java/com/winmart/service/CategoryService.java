@@ -3,6 +3,7 @@ package com.winmart.service;
 import com.winmart.dto.category.CategoryChildDto;
 import com.winmart.dto.category.CategoryTreeDto;
 import com.winmart.entity.Category;
+import com.winmart.exception.NotFoundException;
 import com.winmart.repository.CategoryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +84,26 @@ public class CategoryService {
         return result;
     }
 
-    public List<CategoryChildDto> getCategoryChild(String parentSlug) {
-        return categoryRepository.getCategoryChild(parentSlug);
+    public CategoryTreeDto getCategoryTreeFromSlug(String slug) {
+        Category current = categoryRepository.findBySlugWithParent(slug);
+        if (current == null) {
+            throw new NotFoundException("Category not found: " + slug);
+        }
+
+        // Nếu slug là con thì root = parent, nếu slug là cha thì root = chính nó
+        UUID rootId = (current.getParent() != null) ? current.getParent().getId() : current.getId();
+
+        Category root = categoryRepository.findParentWithChildren(rootId);
+        if (root == null) {
+            throw new NotFoundException("Root category not found");
+        }
+
+        List<CategoryChildDto> children = root.getChildren().stream()
+                .filter(Category::getIsActive)
+                .map(ch -> new CategoryChildDto(ch.getId(), ch.getName(), ch.getSlug()))
+                .toList();
+
+        return new CategoryTreeDto(root.getId(), root.getName(), root.getSlug(), children);
     }
+
 }

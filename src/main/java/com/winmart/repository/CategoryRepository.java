@@ -1,6 +1,5 @@
 package com.winmart.repository;
 
-import com.winmart.dto.category.CategoryChildDto;
 import com.winmart.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,17 +32,24 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     boolean existsBySlugAndParentSlug(@Param("childSlug") String childSlug,
                                       @Param("parentSlug") String parentSlug);
 
+
     @Query("""
-            select NEW com.winmart.dto.category.CategoryChildDto(
-                c.id,
-                c.name,
-                c.slug
-            )
-            from Category c
-            join c.parent p
-            where p.slug = :parentSlug
-                and p.isActive = true
-                and c.isActive = true
+                select c
+                from Category c
+                left join c.parent p
+                where c.slug = :slug
+                    and c.isActive = true
             """)
-    List<CategoryChildDto> getCategoryChild(@Param("parentSlug") String parentSlug);
+    Category findBySlugWithParent(@Param("slug") String slug);
+
+    @Query("""
+                select p
+                from Category p
+                left join fetch p.children ch
+                where p.id = :parentId
+                and p.isActive = true
+            """)
+    Category findParentWithChildren(@Param("parentId") UUID parentId);
+
+
 }

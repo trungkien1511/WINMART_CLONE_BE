@@ -79,8 +79,8 @@ public class HomeService {
                     pp.getId(),
                     pp.getProduct().getName(),
                     pp.getProduct().getSlug(),
-                    pricing.finalPrice(),
-                    pricing.displayOriginalPrice(),
+                    pp.getFinalPrice(),
+                    pp.getOriginalPrice(),
                     pp.getPackagingType().getName()
             );
 

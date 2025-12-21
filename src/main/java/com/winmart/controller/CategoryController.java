@@ -1,6 +1,5 @@
 package com.winmart.controller;
 
-import com.winmart.dto.category.CategoryChildDto;
 import com.winmart.dto.category.CategoryTreeDto;
 import com.winmart.dto.product.ProductSummaryDto;
 import com.winmart.service.CategoryService;
@@ -27,21 +26,18 @@ public class CategoryController {
         return categoryService.getCategoryTree();
     }
 
-    @GetMapping("/{parentSlug}")
-    public List<CategoryChildDto> getCategoryChild(@PathVariable String parentSlug) {
-        return categoryService.getCategoryChild(parentSlug);
+    @GetMapping("/{slug}")
+    public CategoryTreeDto getCategoryChild(@PathVariable String slug) {
+        return categoryService.getCategoryTreeFromSlug(slug);
     }
 
-    @GetMapping("/{parentSlug}/products")
-    public List<ProductSummaryDto> getProductsByParentSlug(@PathVariable String parentSlug) {
-        return productService.getProductsByParentSlug(parentSlug);
-    }
-
-    @GetMapping("/{parentSlug}/{childSlug}/products")
-    public List<ProductSummaryDto> getProductSByChild(
-            @PathVariable String parentSlug,
-            @PathVariable String childSlug
+    @GetMapping("/{slug}/products")
+    public List<ProductSummaryDto> getProductsByCategory(
+            @PathVariable String slug,
+            @RequestParam(required = false) String order,
+            @RequestParam(required = false) String brands
     ) {
-        return productService.getProductsByChildSlug(parentSlug, childSlug);
+        return productService.getProductsByCategory(slug, order, brands);
     }
+
 }

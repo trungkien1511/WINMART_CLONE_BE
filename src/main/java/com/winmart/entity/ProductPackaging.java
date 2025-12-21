@@ -46,6 +46,9 @@ public class ProductPackaging {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "final_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal finalPrice;
+
     @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal originalPrice;
 
@@ -81,6 +84,11 @@ public class ProductPackaging {
         this.stockQuantity = stockQuantity != null ? stockQuantity : 0;
         this.barcode = barcode;
         this.isDefault = isDefault != null ? isDefault : false;
+    }
+
+    public boolean isOnSale() {
+        return this.getOriginalPrice() != null
+                && this.getOriginalPrice().compareTo(this.getFinalPrice()) > 0;
     }
 
     // Business logic methods
@@ -173,4 +181,5 @@ public class ProductPackaging {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }
